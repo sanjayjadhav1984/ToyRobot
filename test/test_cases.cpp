@@ -2,7 +2,8 @@
 #include "ToyRobot.h"
 
 // Test ToyRobot
-TEST(ToyRobotTest, isNotPlacedInitially) {
+TEST(ToyRobotTest, isNotPlacedInitially) 
+{
     ToyRobot robot;
     EXPECT_EQ(robot.x, -1);
     EXPECT_EQ(robot.y, -1);
@@ -11,7 +12,8 @@ TEST(ToyRobotTest, isNotPlacedInitially) {
 }
 
 // Test PlaceCommand
-TEST(PlaceCommandTest, ValidPlacement) {
+TEST(PlaceCommandTest, ValidPlacement) 
+{
     ToyRobot robot;
     auto cmd = std::make_unique<PlaceCommand>(2, 2, "NORTH");
     cmd->execute(robot);
@@ -21,17 +23,24 @@ TEST(PlaceCommandTest, ValidPlacement) {
     EXPECT_EQ(robot.facing, "NORTH");
 }
 
-TEST(PlaceCommandTest, InvalidPlacement) {
+TEST(PlaceCommandTest, InvalidPlacement) 
+{
     ToyRobot robot;
     auto cmd = std::make_unique<PlaceCommand>(-1, 2, "NORTH");
+
+    testing::internal::CaptureStderr(); // Capture standard error
     cmd->execute(robot);
+
+    std::string output = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(output, "Invalid PLACE command.\n");
 
     EXPECT_EQ(robot.x, -1); // Robot should not be placed
     EXPECT_EQ(robot.y, -1);
     EXPECT_EQ(robot.facing, "");
 }
 
-TEST(PlaceCommandTest, ParseValidCommand) {
+TEST(PlaceCommandTest, ParseValidCommand) 
+{
     std::string command = "PLACE 1,2,SOUTH";
     auto cmd = PlaceCommand::parse(command);
 
@@ -44,15 +53,49 @@ TEST(PlaceCommandTest, ParseValidCommand) {
     EXPECT_EQ(robot.facing, "SOUTH");
 }
 
-TEST(PlaceCommandTest, ParseInvalidCommand) {
+TEST(PlaceCommandTest, ParseInvalidCommand1) 
+{
     std::string command = "PLACE 1,2";
     auto cmd = PlaceCommand::parse(command);
 
     EXPECT_EQ(cmd, nullptr); // Invalid command should return nullptr
 }
 
+TEST(PlaceCommandTest, ParseInvalidCommand2) 
+{
+    std::string command = "PLACE 1,2,north";
+    auto cmd = PlaceCommand::parse(command);
+
+    EXPECT_EQ(cmd, nullptr); // Invalid command should return nullptr
+}
+
+TEST(PlaceCommandTest, ParseInvalidCommand3) 
+{
+    std::string command = "PLACE 1,,north";
+ 
+    testing::internal::CaptureStderr(); // Capture standard error
+    auto cmd = PlaceCommand::parse(command);
+
+    std::string output = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(output, "Error parsing PLACE command: stoi\n");    
+
+    EXPECT_EQ(cmd, nullptr); // Invalid command should return nullptr
+}
+
+TEST(PlaceCommandTest, ParseInvalidCommand4) 
+{
+    std::string command = "PLACE";
+    testing::internal::CaptureStderr(); // Capture standard error
+    auto cmd = PlaceCommand::parse(command);
+
+    std::string output = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(output, "Error parsing PLACE command: basic_string::substr: __pos (which is 6) > this->size() (which is 5)\n");    
+
+    EXPECT_EQ(cmd, nullptr); // Invalid command should return nullptr
+}
 // Test MoveCommand
-TEST(MoveCommandTest, MoveNorth) {
+TEST(MoveCommandTest, MoveNorth) 
+{
     ToyRobot robot;
     robot.x = 1;
     robot.y = 1;
@@ -65,7 +108,8 @@ TEST(MoveCommandTest, MoveNorth) {
     EXPECT_EQ(robot.y, 2);
 }
 
-TEST(MoveCommandTest, PreventOutOfBoundsMove) {
+TEST(MoveCommandTest, PreventOutOfBoundsMove) 
+{
     ToyRobot robot;
     robot.x = 0;
     robot.y = 4;
@@ -79,7 +123,8 @@ TEST(MoveCommandTest, PreventOutOfBoundsMove) {
 }
 
 // Test LeftCommand
-TEST(LeftCommandTest, TurnLeft) {
+TEST(LeftCommandTest, TurnLeft) 
+{
     ToyRobot robot;
     robot.x = 0;
     robot.y = 0;
@@ -92,7 +137,8 @@ TEST(LeftCommandTest, TurnLeft) {
 }
 
 // Test RightCommand
-TEST(RightCommandTest, TurnRight) {
+TEST(RightCommandTest, TurnRight) 
+{
     ToyRobot robot;
     robot.x = 0;
     robot.y = 0;
@@ -105,7 +151,8 @@ TEST(RightCommandTest, TurnRight) {
 }
 
 // Test ReportCommand
-TEST(ReportCommandTest, ReportPosition) {
+TEST(ReportCommandTest, ReportPosition) 
+{
     ToyRobot robot;
     robot.x = 1;
     robot.y = 2;
@@ -119,7 +166,8 @@ TEST(ReportCommandTest, ReportPosition) {
     EXPECT_EQ(output, "1,2,EAST\n");
 }
 
-TEST(ReportCommandTest, ReportUnplacedRobot) {
+TEST(ReportCommandTest, ReportUnplacedRobot) 
+{
     ToyRobot robot;
 
     auto cmd = std::make_unique<ReportCommand>();
@@ -131,7 +179,8 @@ TEST(ReportCommandTest, ReportUnplacedRobot) {
 }
 
 // Test PlaceCommand through CommandFactory
-TEST(CommandFactoryTest, PlaceCommandValid) {
+TEST(CommandFactoryTest, PlaceCommandValid) 
+{
     std::string input = "PLACE 2,3,NORTH";
     auto cmd = CommandFactory::createCommand(input);
 
@@ -146,22 +195,16 @@ TEST(CommandFactoryTest, PlaceCommandValid) {
     EXPECT_TRUE(robot.isPlaced());
 }
 
-TEST(CommandFactoryTest, PlaceCommandInvalid) {
+TEST(CommandFactoryTest, PlaceCommandInvalid) 
+{
     std::string input = "PLACE -1,5,WEST";
     auto cmd = CommandFactory::createCommand(input);
 
-    EXPECT_NE(cmd, nullptr); // Command is created, but execution fails
-
-    ToyRobot robot;
-    cmd->execute(robot);
-
-    EXPECT_EQ(robot.x, -1); // Robot is not placed
-    EXPECT_EQ(robot.y, -1);
-    EXPECT_EQ(robot.facing, "");
-    EXPECT_FALSE(robot.isPlaced());
+    EXPECT_EQ(cmd, nullptr); // Malformed command returns nullptr
 }
 
-TEST(CommandFactoryTest, PlaceCommandMalformed) {
+TEST(CommandFactoryTest, PlaceCommandMalformed) 
+{
     std::string input = "PLACE 1,2";
     auto cmd = CommandFactory::createCommand(input);
 
@@ -169,7 +212,8 @@ TEST(CommandFactoryTest, PlaceCommandMalformed) {
 }
 
 // Test MoveCommand
-TEST(CommandFactoryTest, MoveCommand) {
+TEST(CommandFactoryTest, MoveCommand) 
+{
     ToyRobot robot;
     robot.x = 2;
     robot.y = 2;
@@ -182,7 +226,8 @@ TEST(CommandFactoryTest, MoveCommand) {
     EXPECT_EQ(robot.y, 3);
 }
 
-TEST(CommandFactoryTest, MoveCommandOutOfBounds) {
+TEST(CommandFactoryTest, MoveCommandOutOfBounds) 
+{
     ToyRobot robot;
     robot.x = 0;
     robot.y = 4;
@@ -196,7 +241,8 @@ TEST(CommandFactoryTest, MoveCommandOutOfBounds) {
 }
 
 // Test LeftCommand
-TEST(CommandFactoryTest, LeftCommand) {
+TEST(CommandFactoryTest, LeftCommand) 
+{
     ToyRobot robot;
     robot.x = 1;
     robot.y = 1;
@@ -209,7 +255,8 @@ TEST(CommandFactoryTest, LeftCommand) {
 }
 
 // Test RightCommand
-TEST(CommandFactoryTest, RightCommand) {
+TEST(CommandFactoryTest, RightCommand) 
+{
     ToyRobot robot;
     robot.x = 1;
     robot.y = 1;
@@ -222,7 +269,8 @@ TEST(CommandFactoryTest, RightCommand) {
 }
 
 // Test ReportCommand
-TEST(CommandFactoryTest, ReportCommandValid) {
+TEST(CommandFactoryTest, ReportCommandValid) 
+{
     ToyRobot robot;
     robot.x = 1;
     robot.y = 2;
@@ -237,7 +285,8 @@ TEST(CommandFactoryTest, ReportCommandValid) {
     EXPECT_EQ(output, "1,2,EAST\n");
 }
 
-TEST(CommandFactoryTest, ReportCommandUnplacedRobot) {
+TEST(CommandFactoryTest, ReportCommandUnplacedRobot) 
+{
     ToyRobot robot;
 
     auto cmd = CommandFactory::createCommand("REPORT");
@@ -250,16 +299,23 @@ TEST(CommandFactoryTest, ReportCommandUnplacedRobot) {
 }
 
 // Test Invalid Command
-TEST(CommandFactoryTest, InvalidCommand) {
+TEST(CommandFactoryTest, InvalidCommand) 
+{
     std::string input = "JUMP";
+
+    testing::internal::CaptureStderr(); // Capture standard error
     auto cmd = CommandFactory::createCommand(input);
+
+    std::string output = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(output, "Invalid command: JUMP\n");     
 
     EXPECT_EQ(cmd, nullptr); // Invalid command should return nullptr
 }
 
 
 // Main function for running all tests
-int main(int argc, char** argv) {
+int main(int argc, char** argv) 
+{
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
